@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Property Offer Calculator</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --border: #e2e8f0;
+      --good: #166534;
+      --warn: #991b1b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+    }
+
+    .sub {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 1rem;
+      color: var(--text);
+      background: #fff;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      outline: 3px solid rgba(37, 99, 235, 0.15);
+    }
+
+    .results {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .result-box {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .result-box.highlight {
+      background: var(--accent-soft);
+      border-color: #bfdbfe;
+    }
+
+    .kicker {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .value {
+      margin: 4px 0 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .summary {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      background: #fff;
+    }
+
+    .summary h2 {
+      margin: 0 0 8px;
+      font-size: 1.05rem;
+    }
+
+    .summary p {
+      margin: 6px 0;
+      color: #334155;
+    }
+
+    .positive { color: var(--good); }
+    .negative { color: var(--warn); }
+
+    @media (max-width: 720px) {
+      .grid, .results { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="card">
+      <h1>Mini Property Offer Calculator</h1>
+      <p class="sub">Quickly estimate your maximum allowable offer and deal spread for a retail flip.</p>
+
+      <section class="grid" aria-label="Input fields">
+        <div class="field full">
+          <label for="address">Property address</label>
+          <input id="address" type="text" value="123 Maple St, Atlanta, GA" />
+        </div>
+
+        <div class="field">
+          <label for="arv">ARV ($)</label>
+          <input id="arv" type="number" min="0" step="1000" value="325000" />
+        </div>
+
+        <div class="field">
+          <label for="percent">Max offer percentage (%)</label>
+          <input id="percent" type="number" min="0" max="100" step="1" value="65" />
+        </div>
+
+        <div class="field">
+          <label for="rehab">Estimated rehab ($)</label>
+          <input id="rehab" type="number" min="0" step="1000" value="45000" />
+        </div>
+
+        <div class="field">
+          <label for="costs">Closing/holding/resale costs ($)</label>
+          <input id="costs" type="number" min="0" step="1000" value="28000" />
+        </div>
+
+        <div class="field full">
+          <label for="profit">Desired profit ($)</label>
+          <input id="profit" type="number" min="0" step="1000" value="35000" />
+        </div>
+      </section>
+
+      <section class="results" aria-live="polite">
+        <div class="result-box highlight">
+          <p class="kicker">Max allowable offer</p>
+          <p class="value" id="maxOffer">$0</p>
+        </div>
+        <div class="result-box">
+          <p class="kicker">Estimated spread</p>
+          <p class="value" id="spread">$0</p>
+        </div>
+      </section>
+
+      <section class="summary" id="summary">
+        <h2>Retail Flip Summary</h2>
+        <p id="summaryText">Enter deal numbers to see your summary.</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const ids = ["address", "arv", "percent", "rehab", "costs", "profit"];
+    const inputs = Object.fromEntries(ids.map((id) => [id, document.getElementById(id)]));
+
+    const maxOfferEl = document.getElementById("maxOffer");
+    const spreadEl = document.getElementById("spread");
+    const summaryTextEl = document.getElementById("summaryText");
+
+    const toNumber = (value) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    };
+
+    const formatMoney = (num) =>
+      num.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+
+    function calculate() {
+      const address = inputs.address.value.trim() || "(No address entered)";
+      const arv = toNumber(inputs.arv.value);
+      const percentage = toNumber(inputs.percent.value) / 100;
+      const rehab = toNumber(inputs.rehab.value);
+      const costs = toNumber(inputs.costs.value);
+      const desiredProfit = toNumber(inputs.profit.value);
+
+      const maxAllowableOffer = arv * percentage - rehab - costs - desiredProfit;
+      const spread = arv - rehab - costs - maxAllowableOffer;
+
+      maxOfferEl.textContent = formatMoney(maxAllowableOffer);
+      spreadEl.textContent = formatMoney(spread);
+      spreadEl.className = `value ${spread >= 0 ? "positive" : "negative"}`;
+
+      summaryTextEl.textContent = `${address}: If ARV is ${formatMoney(arv)}, buying at or below ${formatMoney(maxAllowableOffer)} with ${formatMoney(rehab)} rehab and ${formatMoney(costs)} carrying/transaction costs targets about ${formatMoney(desiredProfit)} profit.`;
+    }
+
+    Object.values(inputs).forEach((input) => {
+      input.addEventListener("input", calculate);
+    });
+
+    calculate();
+  </script>
+</body>
+</html>
